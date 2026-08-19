@@ -1,183 +1,99 @@
-# 🌊 LakeScore
+<p align="center">
+  <img src="docs/assets/logo.svg" alt="LakeScore — GenAI-powered data quality for your Databricks lakehouse" width="720">
+</p>
 
-> GenAI-powered data quality scoring for your Databricks lakehouse — compute catalog-level quality metrics, automate metadata generation, and enforce data governance at scale, all rolled up into a single score per table.
+<p align="center">
+  <a href="https://github.com/issararab/Data-Quality-Framework/actions/workflows/ci.yml"><img src="https://github.com/issararab/Data-Quality-Framework/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10+">
+  <img src="https://img.shields.io/badge/Databricks-Unity%20Catalog-FF3621?logo=databricks&logoColor=white" alt="Databricks Unity Catalog">
+</p>
+
+<p align="center">
+  Stop guessing which tables you can trust. LakeScore turns every table in your Unity Catalog<br>
+  into a <strong>0–100 quality score</strong> — computed automatically, explained by GenAI, and enforced with RAG-grounded checks.
+</p>
 
 ---
 
-## Overview
+## Contents
 
-**LakeScore** is a modular, extensible framework that runs natively on any Databricks workspace. It evaluates tables across a predefined taxonomy of data quality dimensions and produces a normalized score out of **100 points** per table, surfaced on an interactive dashboard so stakeholders can see quality at a glance and drill into what's dragging a table's score down.
-
-At its core, LakeScore combines:
-- **Rule-based quality checks** (ownership, table type, freshness, etc.)
-- **GenAI-powered metadata enrichment** (LLM-generated table/column descriptions)
-- **RAG-based check generation** (SodaCL-grounded column-level data checks via a vector store)
+- [Why LakeScore](#why-lakescore)
+- [How it works](#how-it-works)
+- [Key features](#key-features)
+- [Quick start](#quick-start)
+- [Quality dimensions](#quality-dimensions)
+- [Documentation](#documentation)
+- [Requirements](#requirements)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## Repository Structure
+## Why LakeScore
 
+Lakehouses grow faster than anyone can document them. Ownership goes stale, descriptions never
+get written, and quality checks — if they exist at all — live in one engineer's head. By the
+time someone downstream hits a bad number, there's no fast way to tell whether the table was
+ever trustworthy in the first place.
+
+LakeScore closes that gap without asking your team to write more YAML by hand:
+
+- **See quality at a glance.** Every table gets a single 0–100 score across 5 dimensions, so
+  "is this table safe to use?" has a fast, concrete answer instead of a Slack thread.
+- **Stop writing boilerplate documentation.** GenAI drafts table and column descriptions from
+  the metadata that already exists — you review, you don't start from a blank page.
+- **Get real checks, not guesses.** A RAG pipeline grounds check generation in actual SodaCL
+  syntax pulled from a knowledge base, so generated checks are both column-appropriate and
+  syntactically valid — not hallucinated YAML.
+- **It runs where your data already lives.** No external service, no data leaving the
+  workspace — LakeScore is a Databricks-native pipeline over Unity Catalog metadata.
+
+## How it works
+
+```mermaid
+flowchart LR
+    subgraph L["📂 Your Lakehouse"]
+        T[("Unity Catalog\ntables")]
+    end
+
+    subgraph P["LakeScore Pipeline"]
+        direction TB
+        S1["1 · Configure\nthresholds & windows"]
+        S2["2 · Enrich\nGenAI descriptions"]
+        S3["3 · Generate checks\nRAG + SodaCL"]
+        S4["4 · Score\nrun checks, compute dimensions"]
+        S1 --> S2 --> S3 --> S4
+    end
+
+    subgraph O["📊 Results"]
+        D[("dq_summary")]
+        Dash["LakeScore\nDashboard"]
+    end
+
+    T --> S1
+    S4 --> D --> Dash
 ```
-lakescore/
-├── src/lakescore/       # Installable package: catalog/, metadata/, quality/, generators/
-├── notebooks/           # Thin orchestration notebooks (import from lakescore.*)
-├── resources/           # Databricks Asset Bundle job definition
-├── tests/                # Unit + local Spark/Delta integration tests
-├── docs/                 # Architecture and quality-dimensions reference
-├── data/knowledge_base/  # Bundled SodaCL knowledge-base CSV
-├── databricks.yml        # DAB root config
-└── pyproject.toml
-```
 
-See [`docs/architecture.md`](docs/architecture.md) for the full package map and design
-rationale.
+Each stage is a thin Databricks notebook under [`notebooks/`](notebooks/) backed by the
+installable [`lakescore`](src/lakescore/) package; execution order is expressed by the job DAG
+in [`resources/lakescore_job.yml`](resources/lakescore_job.yml). For the full package map and
+data model, see [`docs/architecture.md`](docs/architecture.md).
 
-### Notebook Responsibilities
+## Key features
 
-| Notebook | Role |
+| | |
 |---|---|
-| `notebooks/init_config.py` | Configure LakeScore parameters (thresholds, windows, custom rules) |
-| `notebooks/update_metadata.py` | Update low cardinality flags; use GenAI to generate column descriptions |
-| `notebooks/generate_checks.py` | Use RAG over the SodaCL knowledge base to generate column-level checks |
-| `notebooks/compute_summary.py` | Gather quality results for all defined dimensions and write to `dq_summary` |
+| 🎯 **One score per table** | 5 weighted dimensions — Stewardship, Usability, Freshness, Validity, Accuracy — roll up to a single 0–100 score, color-coded Good / Okay / Poor. |
+| 🤖 **GenAI metadata enrichment** | Missing table/column descriptions are drafted by an LLM from available schema metadata, tagged `has_comment` so LakeScore never regenerates one it's already handled. |
+| 🔎 **RAG-grounded check generation** | Column checks are generated by an LLM retrieving real SodaCL syntax from a vector-indexed knowledge base — not free-form guesses. |
+| 🏷️ **State tracked via Unity Catalog tags** | No shadow bookkeeping tables — `has_check`, `has_comment`, `has_low_cardinality` live as native column tags. |
+| 🧩 **Extensible checks** | AI-generated checks and manually authored ones live side by side in `column_checks`, distinguished by tag. |
+| 📦 **Deploys as a real package** | `pip install`-able, typed, tested, and CI-checked — not a folder of loose scripts. |
 
-> **Execution order matters** (`init_config` → `update_metadata` → `generate_checks` →
-> `compute_summary`) but is expressed by the job DAG in
-> [`resources/lakescore_job.yml`](resources/lakescore_job.yml), not by filename — see
-> `depends_on` in that file.
+## Quick start
 
----
-
-## Data Model
-
-LakeScore operates at the **catalog level**. For every catalog it monitors, it creates a dedicated `data_quality` schema containing the following tables and indexes:
-
-```
-<catalog>/
-└── data_quality/
-    ├── dq_config             # Framework configuration parameters per table
-    ├── column_checks         # Column-level data quality checks (AI-generated or manual)
-    ├── dq_summary            # Full DQ dimension scores per table
-    ├── knowledge_base        # SodaCL checks knowledge base (vector store)
-    └── knowledge_base_index  # Vector index over the knowledge base
-```
-
-> **Prerequisite:** The `information_schema` must be present in your Databricks workspace — the framework mines system metadata from it.
-
----
-
-## Configuration
-
-### Framework Parameters (`dq_config`)
-
-The `notebooks/init_config.py` notebook initializes parameters with sensible defaults:
-
-| Parameter | Default | Description |
-|---|---|---|
-| `low_cardinality_threshold` | `10` | Max distinct values to classify a column as low-cardinality |
-| `freshness_window` | `1d` | Time window for freshness evaluation |
-| `validity_window` | `1d` | Time window for validity evaluation |
-
-To override parameters for a specific table, use `lakescore.catalog.dq_config`:
-
-```python
-from lakescore.catalog.dq_config import update_table_dq_conf_parameters
-
-update_table_dq_conf_parameters(
-    spark,
-    catalog_name: str,
-    schema_name: str,
-    table_name: str,
-    low_cardinality_threshold: int = 10,
-    freshness_window: str = "1d",
-    validity_window: str = "1d",
-    tag: str = None,
-) -> bool
-```
-
----
-
-## Column Checks
-
-The `column_checks` table stores all quality checks to be applied at the column level. Checks can be AI-generated (via RAG) or manually authored.
-
-### Add a New Check
-
-```python
-from lakescore.catalog.column_checks import add_column_check
-
-add_column_check(
-    spark,
-    catalog_name: str,
-    schema_name: str,
-    table_name: str,
-    column_name: str,
-    check: str,
-) -> bool
-```
-
-Use this to insert additional checks beyond those generated by the LLM.
-
-### Update an Existing Check
-
-```python
-from lakescore.catalog.column_checks import update_column_checks
-
-update_column_checks(
-    spark,
-    catalog_name: str,
-    schema_name: str,
-    table_name: str,
-    column_name: str,
-    check: str,
-    tag: str = None,    # Use "ai_generated" for LLM-authored checks
-    check_id: int = None,
-) -> bool
-```
-
-> The combination of `(catalog_name, schema_name, table_name, column_name)` is not guaranteed to be unique — a table column can have multiple checks. Use `check_id` to target a specific check. The `tag` field differentiates AI-generated checks (`"ai_generated"`) from manually authored ones.
-
----
-
-## Metadata Generation — State Machine
-
-The `notebooks/update_metadata.py` notebook follows a state automata logic to decide how to handle each table's metadata:
-
-- If a table has **no description**, the LLM generates one from available metadata.
-- If a description **already exists**, it is validated and potentially updated.
-- If a column has **no description**, the LLM generates one — conditioned on the table description and available schema metadata.
-- For **low-cardinality columns**, cardinality values are also provided to the LLM as context.
-- Generated descriptions are flagged via an `ai_generated` tag so they can be distinguished from human-authored ones.
-
----
-
-## Quality Dimensions Taxonomy
-
-LakeScore evaluates each table across **5 dimensions** — Stewardship (25 pts), Usability
-(15 pts), Freshness (10 pts), Validity (20 pts), Accuracy (30 pts) — summing to a total score of
-**100 points**. Full metric-by-metric breakdown, including which `lakescore` function computes
-each one: [`docs/quality_dimensions.md`](docs/quality_dimensions.md).
-
----
-
-## Scoreboard
-
-The `dq_summary` table stores the computed scores per table. An interactive **LakeScore Dashboard** provides a breakdown by dimension, with color-coded scoring tiers (see `docs/quality_dimensions.md` for the full Good/Okay/Poor thresholds).
-
-Example output:
-
-| catalog | schema | table | stewardship | usability | freshness | validity | accuracy | total | category |
-|---|---|---|---|---|---|---|---|---|---|
-| demo | data_mart | dim_product | 15 | 8 | 0 | 20 | 25 | 68 | Good |
-| demo | data_mart | fact_sales | 15 | 0 | 0 | 20 | 5 | 40 | Poor |
-| demo | data_mart | dim_order | 20 | 15 | 0 | 20 | 5 | 60 | Okay |
-| demo | data_mart | dim_user | 15 | 8 | 0 | 20 | 5 | 48 | Okay |
-
----
-
-## Getting Started
-
-### Option A — Databricks Asset Bundle (recommended)
+**Option A — Databricks Asset Bundle** (recommended)
 
 ```bash
 databricks bundle validate
@@ -185,25 +101,21 @@ databricks bundle deploy -t dev
 databricks bundle run lakescore_pipeline -t dev
 ```
 
-This deploys `notebooks/` and runs them via the job defined in
-[`resources/lakescore_job.yml`](resources/lakescore_job.yml), in order, parameterized by the
-`catalog_name` bundle variable (`databricks.yml`). **Note:** this scaffolding was authored
-without access to a live workspace to validate/deploy against — review the job cluster spec
-before running. See [`docs/architecture.md`](docs/architecture.md#known-follow-ups-not-done-in-this-restructure).
+Deploys `notebooks/` and runs them in order via the job in
+[`resources/lakescore_job.yml`](resources/lakescore_job.yml), parameterized by the
+`catalog_name` bundle variable. This scaffolding hasn't been deploy-tested against a live
+workspace — review the job cluster spec first (see
+[known follow-ups](docs/architecture.md#known-follow-ups-not-done-in-this-restructure)).
 
-### Option B — Manual notebook import
+**Option B — Manual notebook import**
 
-1. **Clone** this repository into your Databricks workspace (Repos).
-2. Ensure `information_schema` is available in the catalogs you wish to monitor.
-3. Open and run `notebooks/init_config.py` (set the `catalog_name` widget). Customize
-   per-table parameters afterward if needed via `lakescore.catalog.dq_config`.
-4. Run `notebooks/update_metadata.py` to enrich table and column metadata via GenAI.
-5. Run `notebooks/generate_checks.py` to generate RAG-based column checks using the SodaCL
-   knowledge base.
-6. Run `notebooks/compute_summary.py` to compute and persist all DQ dimension scores.
-7. Query `<catalog>.data_quality.dq_summary` or open the LakeScore Dashboard to inspect results.
+1. Clone this repo into your Databricks workspace (Repos), with `information_schema`
+   available on the catalog you want to monitor.
+2. Run `notebooks/init_config.py`, `update_metadata.py`, `generate_checks.py`, then
+   `compute_summary.py` — in that order, setting the `catalog_name` widget on each.
+3. Query `<catalog>.data_quality.dq_summary` or open the LakeScore Dashboard.
 
-### Local development
+**Local development**
 
 ```bash
 pip install -e ".[dev]"
@@ -211,19 +123,42 @@ pre-commit install
 pytest
 ```
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full dev workflow.
+Full dev workflow: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
----
+## Quality dimensions
+
+| Dimension | Points | What it checks |
+|---|---|---|
+| 🏛 Stewardship | 25 | Owner, Delta format, production pipeline, retention policy, managed location |
+| 📖 Usability | 15 | Table and column descriptions present |
+| ⏱ Freshness | 10 | Last write within the configured window |
+| ✅ Validity | 20 | Schema (columns + datatypes) unchanged vs. a past version |
+| 🎯 Accuracy | 30 | Checks defined, checks passing |
+
+Full metric-by-metric breakdown, including which `lakescore` function computes each one:
+[`docs/quality_dimensions.md`](docs/quality_dimensions.md).
+
+## Documentation
+
+| Doc | Covers |
+|---|---|
+| [`docs/architecture.md`](docs/architecture.md) | Package map, functional-core design, data model, RAG flow |
+| [`docs/quality_dimensions.md`](docs/quality_dimensions.md) | Full scoring taxonomy, metric-by-metric |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Local dev setup, conventions, running checks |
+| [`CHANGELOG.md`](CHANGELOG.md) | Notable changes by version |
+| [Wiki](https://github.com/issararab/Data-Quality-Framework/wiki) | Configuration reference, check-authoring guide, FAQ/troubleshooting |
 
 ## Requirements
 
-- **Databricks workspace** with Unity Catalog enabled
-- `information_schema` available on monitored catalogs
-- Access to a **Foundation Model** (LLM) endpoint and a **Vector Search** endpoint for GenAI features
-- Delta Lake tables (required for `is_delta_table` metric to pass)
-- Python 3.10+ for local development/testing (Java + PySpark/delta-spark for the integration test suite)
+- Databricks workspace with Unity Catalog enabled, `information_schema` on monitored catalogs
+- Access to a Foundation Model (LLM) endpoint and a Vector Search endpoint
+- Delta Lake tables (required for the `is_delta_table` metric to pass)
+- Python 3.10+ for local development (Java + PySpark/delta-spark for the integration test suite)
 
----
+## Contributing
+
+Issues and PRs welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md) for dev setup and
+conventions.
 
 ## License
 

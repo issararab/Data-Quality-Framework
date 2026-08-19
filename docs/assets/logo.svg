@@ -1,0 +1,45 @@
+<svg width="1000" height="260" viewBox="0 0 1000 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LakeScore">
+  <defs>
+    <linearGradient id="ls-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0B1220"/>
+      <stop offset="100%" stop-color="#123A5E"/>
+    </linearGradient>
+    <linearGradient id="ls-icon" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1E7FD1"/>
+      <stop offset="100%" stop-color="#16C7B0"/>
+    </linearGradient>
+    <linearGradient id="ls-accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#5FE3C9"/>
+      <stop offset="100%" stop-color="#7FD1FF"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="260" rx="32" fill="url(#ls-bg)"/>
+
+  <!-- icon: lakehouse "score" mark -->
+  <g transform="translate(40,30)">
+    <rect x="0" y="0" width="200" height="200" rx="46" fill="url(#ls-icon)"/>
+
+    <!-- ripples -->
+    <path d="M14 142 Q 40 124 66 142 T 118 142 T 170 142 T 186 142"
+          stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M14 164 Q 40 146 66 164 T 118 164 T 170 164 T 186 164"
+          stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="9" fill="none" stroke-linecap="round"/>
+
+    <!-- rising score bars -->
+    <rect x="52" y="98" width="18" height="32" rx="6" fill="#FFFFFF"/>
+    <rect x="82" y="78" width="18" height="52" rx="6" fill="#FFFFFF"/>
+    <rect x="112" y="54" width="18" height="76" rx="6" fill="#FFFFFF"/>
+
+    <!-- quality check badge -->
+    <circle cx="160" cy="46" r="30" fill="#34D399" stroke="#0B1220" stroke-width="6"/>
+    <path d="M148 46 L157 55 L174 36" stroke="#0B1220" stroke-width="6" fill="none"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- wordmark -->
+  <g>
+    <text x="270" y="140" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="86" font-weight="700" fill="#FFFFFF">Lake<tspan fill="url(#ls-accent)">Score</tspan></text>
+    <text x="274" y="180" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="25" font-weight="400" fill="#9FB4C7">GenAI-powered data quality for your Databricks lakehouse</text>
+  </g>
+</svg>

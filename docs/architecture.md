@@ -1,5 +1,19 @@
 # Architecture
 
+## Repository layout
+
+```
+lakescore/
+├── src/lakescore/        # Installable package — see "Package map" below
+├── notebooks/            # Thin orchestration notebooks (import from lakescore.*)
+├── resources/            # Databricks Asset Bundle job definition
+├── tests/                # Unit + local Spark/Delta integration tests
+├── docs/                 # This file, quality_dimensions.md, assets/logo.svg
+├── data/knowledge_base/  # Bundled SodaCL knowledge-base CSV
+├── databricks.yml        # DAB root config
+└── pyproject.toml
+```
+
 ## Package map
 
 ```
