@@ -1,0 +1,85 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lakescore"
+version = "0.1.0"
+description = "GenAI-powered data quality scoring for your Databricks lakehouse."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Issar Arab" }]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+dependencies = [
+    "databricks-sdk==0.28.0",
+    "databricks-agents",
+    "databricks-vectorsearch",
+    "mlflow>=2.14",
+    "mlflow-skinny>=2.14",
+    "mlflow[gateway]>=2.14",
+    "langchain==0.2.1",
+    "langchain-core==0.2.5",
+    "langchain-community==0.2.4",
+    "soda-core-spark-df==3.1.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.14",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pre-commit>=3.7",
+    "pyspark==3.5.1",
+    "delta-spark==3.2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/issararab/Data-Quality-Framework"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+# Databricks injects `spark`/`dbutils` into notebook globals at runtime; they're never
+# defined by an import statement in notebooks/*.py.
+builtins = ["spark", "dbutils"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["lakescore"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_ignores = true
+warn_redundant_casts = true
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "databricks.*",
+    "pyspark.*",
+    "delta.*",
+    "langchain.*",
+    "langchain_core.*",
+    "langchain_community.*",
+    "mlflow.*",
+    "soda.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

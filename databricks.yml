@@ -1,0 +1,30 @@
+# Databricks Asset Bundle root config.
+#
+# NOT deploy-tested: authored without access to a live Databricks workspace. Before running
+# `databricks bundle deploy`, review the job cluster spec in resources/lakescore_job.yml
+# (spark_version / node_type_id / autoscaling) against your workspace, and confirm
+# `databricks bundle validate` passes. See docs/architecture.md for the full caveat.
+bundle:
+  name: lakescore
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog_name:
+    description: The Unity Catalog catalog LakeScore monitors and writes its data_quality schema into.
+    default: demo
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+  prod:
+    mode: production
+    variables:
+      catalog_name: prod
+    workspace:
+      root_path: /Workspace/lakescore/${bundle.target}

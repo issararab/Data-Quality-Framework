@@ -1,0 +1,55 @@
+# Job DAG expressing the LakeScore pipeline's execution order via `depends_on`, replacing the
+# numeric filename prefixes the notebooks used to rely on (init_config -> update_metadata ->
+# generate_checks -> compute_summary). Adjust job_clusters.new_cluster below to match your
+# workspace before deploying — the spec here is a starting point, not a validated one.
+resources:
+  jobs:
+    lakescore_pipeline:
+      name: "LakeScore Pipeline (${bundle.target})"
+
+      job_clusters:
+        - job_cluster_key: lakescore_cluster
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 1
+            data_security_mode: SINGLE_USER
+
+      parameters:
+        - name: catalog_name
+          default: ${var.catalog_name}
+
+      tasks:
+        - task_key: init_config
+          job_cluster_key: lakescore_cluster
+          notebook_task:
+            notebook_path: ../notebooks/init_config.py
+            base_parameters:
+              catalog_name: "{{job.parameters.catalog_name}}"
+
+        - task_key: update_metadata
+          job_cluster_key: lakescore_cluster
+          depends_on:
+            - task_key: init_config
+          notebook_task:
+            notebook_path: ../notebooks/update_metadata.py
+            base_parameters:
+              catalog_name: "{{job.parameters.catalog_name}}"
+
+        - task_key: generate_checks
+          job_cluster_key: lakescore_cluster
+          depends_on:
+            - task_key: update_metadata
+          notebook_task:
+            notebook_path: ../notebooks/generate_checks.py
+            base_parameters:
+              catalog_name: "{{job.parameters.catalog_name}}"
+
+        - task_key: compute_summary
+          job_cluster_key: lakescore_cluster
+          depends_on:
+            - task_key: generate_checks
+          notebook_task:
+            notebook_path: ../notebooks/compute_summary.py
+            base_parameters:
+              catalog_name: "{{job.parameters.catalog_name}}"
