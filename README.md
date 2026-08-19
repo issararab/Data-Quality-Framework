@@ -51,29 +51,9 @@ LakeScore closes that gap without asking your team to write more YAML by hand:
 
 ## How it works
 
-```mermaid
-flowchart LR
-    subgraph L["📂 Your Lakehouse"]
-        T[("Unity Catalog\ntables")]
-    end
-
-    subgraph P["LakeScore Pipeline"]
-        direction TB
-        S1["1 · Configure\nthresholds & windows"]
-        S2["2 · Enrich\nGenAI descriptions"]
-        S3["3 · Generate checks\nRAG + SodaCL"]
-        S4["4 · Score\nrun checks, compute dimensions"]
-        S1 --> S2 --> S3 --> S4
-    end
-
-    subgraph O["📊 Results"]
-        D[("dq_summary")]
-        Dash["LakeScore\nDashboard"]
-    end
-
-    T --> S1
-    S4 --> D --> Dash
-```
+<p align="center">
+  <img src="docs/assets/architecture-overview.svg" alt="LakeScore pipeline: Unity Catalog tables flow through Configure, Enrich, Generate Checks, and Score, producing dq_summary and the LakeScore Dashboard" width="900">
+</p>
 
 Each stage is a thin Databricks notebook under [`notebooks/`](notebooks/) backed by the
 installable [`lakescore`](src/lakescore/) package; execution order is expressed by the job DAG
