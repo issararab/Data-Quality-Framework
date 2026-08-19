@@ -134,8 +134,17 @@ flowchart LR
   `databricks bundle validate`/`deploy` against. Review the job cluster spec
   (`spark_version`/`node_type_id`) before deploying.
 - **Local integration tests need a JVM + (on Windows) `winutils.exe`.** `tests/integration/`
-  starts a real local Spark+Delta session. This was authored and code-reviewed, and unit tests
-  (`tests/unit/`, no Spark dependency) were run and pass, but the integration tier itself could
-  not be executed in the Windows sandbox this restructure was done in — no network access to
-  fetch the Windows Hadoop binaries PySpark requires locally. It runs without this issue in the
-  GitHub Actions CI workflow (Linux) and on macOS/Linux dev machines with Java installed.
+  starts a real local Spark+Delta session; on Windows this needs `winutils.exe` on
+  `HADOOP_HOME` (see https://wiki.apache.org/hadoop/WindowsProblems), so it skips cleanly there
+  rather than failing. Confirmed passing for real on Linux (both in CI and via a local WSL
+  environment) — that run is what caught the `USE CATALOG`/`DeltaCatalog` delegate/missing
+  `.format("delta")` bugs fixed after the first CI run on this project's PR #1.
+- **`spark_catalog` stands in for an arbitrarily-named catalog in tests.** `DeltaCatalog` only
+  auto-wires its internal delegate when registered under the special `spark_catalog` name —
+  registering it a second time under a custom name (tried initially, to mirror Unity Catalog's
+  multi-catalog naming more closely) leaves that delegate unset and breaks at the Spark
+  analyzer level. `lakescore`'s own code doesn't care what the catalog is named (everything is
+  fully qualified), so this doesn't reduce what's actually being tested — but it does mean
+  local tests can't independently prove "an arbitrarily-named catalog also works" the way
+  Unity Catalog usage in production would exercise. `spark_catalog` remains the current-catalog
+  fallback for the `spark_catalog` provider only, not a general Unity Catalog stand-in.

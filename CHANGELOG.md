@@ -47,6 +47,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   back to the same environment variable for standalone Model Serving deployment). Also removed
   a hardcoded `llm_model_endpoint="ssbi-openai"` override that shadowed the
   `LAKESCORE_LLM_MODEL_ENDPOINT` environment variable it was meant to respect.
+- `catalog._common.ensure_schema_exists`/`table_exists` relying on `USE CATALOG <name>`, a
+  Databricks SQL extension not recognized by open-source Apache Spark's SQL parser — broke
+  every `catalog/*.py` store function when actually run (a gap the local integration test
+  suite never caught until it could run for real on Linux; it silently skipped on the
+  Windows dev box this project was largely built on). Every statement is now fully
+  catalog-qualified instead of relying on "current catalog" session state, which works on
+  both Unity Catalog and plain Spark.
+- `catalog.column_checks.add_column_check` writing without `.format("delta")`, unlike every
+  other write path in the module — relied on the session's default data source format, which
+  Databricks sets to `delta` workspace-wide (masking the gap) but plain Spark does not.
+- `tests/integration/`'s local Spark+Delta fixture registering a second, arbitrarily-named
+  Delta catalog: `DeltaCatalog` only auto-wires its internal delegate when registered as the
+  special `spark_catalog` name, so queries against the second catalog failed with
+  `NullPointerException: ... "this.delegate" is null`. Tests now target `spark_catalog`
+  directly — `lakescore`'s own catalog-qualification logic is still fully exercised regardless
+  of what the catalog happens to be named.
+- A regression test asserting that a trailing-space metric key (`"is_fresh "`) raises a SQL
+  error — real Spark SQL execution proved this premise false: a trailing space before the next
+  token is ordinary whitespace, discarded by the lexer, not part of the identifier. Corrected
+  to use a key with an *embedded* space (`"is fresh"`), which does genuinely break the
+  generated SQL.
 
 ## [0.1.0] - 2026-08-19
 

@@ -34,7 +34,7 @@ def get_dq_config_target_table(spark: SparkSession, catalog_name: str) -> str:
         str: The fully qualified table path.
     """
     ensure_schema_exists(spark, catalog_name)
-    if not table_exists(spark, "data_quality", "dq_config"):
+    if not table_exists(spark, catalog_name, "data_quality", "dq_config"):
         spark.sql(
             f"""
             CREATE TABLE {catalog_name}.data_quality.dq_config (
