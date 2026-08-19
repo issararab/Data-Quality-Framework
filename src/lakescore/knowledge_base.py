@@ -30,7 +30,7 @@ def create_knowledge_base_table_if_not_exists(
 ) -> None:
     """Creates `catalog_name.schema_name.knowledge_base` if it doesn't already exist."""
     ensure_schema_exists(spark, catalog_name, schema_name)
-    if not table_exists(spark, schema_name, "knowledge_base"):
+    if not table_exists(spark, catalog_name, schema_name, "knowledge_base"):
         spark.sql(
             f"""
             CREATE TABLE {catalog_name}.{schema_name}.knowledge_base (

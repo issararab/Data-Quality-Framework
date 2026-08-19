@@ -34,7 +34,7 @@ def get_checks_target_table(spark: SparkSession, catalog_name: str) -> str:
         str: The fully qualified table path.
     """
     ensure_schema_exists(spark, catalog_name)
-    if not table_exists(spark, "data_quality", "column_checks"):
+    if not table_exists(spark, catalog_name, "data_quality", "column_checks"):
         spark.sql(
             f"""
             CREATE TABLE {catalog_name}.data_quality.column_checks (
@@ -160,7 +160,7 @@ def add_column_check(
         [(catalog_name, schema_name, table_name, column_name, check)], schema=schema
     )
     try:
-        new_df.write.mode("append").saveAsTable(target_table)
+        new_df.write.format("delta").mode("append").saveAsTable(target_table)
         return True
     except Exception as e:
         logger.error("Error while inserting into %s: %s", target_table, e)

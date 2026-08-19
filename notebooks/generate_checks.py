@@ -11,6 +11,13 @@
 
 # COMMAND ----------
 
+# The catalog_name widget must exist *before* the next cell's import: importing
+# lakescore.generators.column_check_rag builds the RAG chain at module-load time, and that
+# build reads this widget via LakeScoreConfig.from_widgets.
+dbutils.widgets.text("catalog_name", "demo")
+
+# COMMAND ----------
+
 from typing import Any
 
 from lakescore.catalog.column_checks import update_column_checks
@@ -21,7 +28,6 @@ from lakescore.metadata.tags import set_column_tag
 
 # COMMAND ----------
 
-dbutils.widgets.text("catalog_name", "demo")
 catalog_name = dbutils.widgets.get("catalog_name")
 config_table = f"{catalog_name}.data_quality.dq_config"
 config_data = get_configurations(spark, config_table)

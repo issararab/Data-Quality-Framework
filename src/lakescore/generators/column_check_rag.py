@@ -5,9 +5,12 @@ requires this module to build and register its chain at import/exec time — so,
 `_rag_helpers.py`, it isn't unit-tested directly. Keep this file limited to wiring; put any new
 logic worth testing in `_rag_helpers.py` or `prompts.py` instead.
 
-Reads its catalog/endpoint configuration from `LAKESCORE_*` environment variables
-(`LakeScoreConfig.from_env`) rather than notebook widgets, since this chain may be deployed
-standalone to a Model Serving endpoint where no notebook context exists.
+Resolves its catalog/endpoint configuration via `LakeScoreConfig.from_widgets`: reads the
+`catalog_name` widget the calling notebook sets (see `notebooks/generate_checks.py`, which
+declares it *before* importing this module so the widget exists by the time this file's
+module-level code runs), falling back to `LAKESCORE_*` environment variables for any field
+without a widget — which also covers standalone deployment to a Model Serving endpoint, where
+there's no widget/notebook context at all and only env vars apply.
 """
 
 from __future__ import annotations
@@ -16,7 +19,7 @@ from functools import partial
 from operator import itemgetter
 
 import mlflow
-from databricks.sdk.runtime import spark
+from databricks.sdk.runtime import dbutils, spark
 from databricks.vector_search.client import VectorSearchClient
 from langchain.schema.runnable import RunnableLambda
 from langchain_community.chat_models import ChatDatabricks
@@ -68,6 +71,6 @@ def build_chain(config: LakeScoreConfig) -> Runnable:
 
 
 mlflow.langchain.autolog()
-_config = LakeScoreConfig.from_env(llm_model_endpoint="ssbi-openai")
+_config = LakeScoreConfig.from_widgets(dbutils)
 rag_generator = build_chain(_config)
 mlflow.models.set_model(rag_generator)

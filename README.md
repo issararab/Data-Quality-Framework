@@ -21,6 +21,7 @@
 - [Why LakeScore](#why-lakescore)
 - [How it works](#how-it-works)
 - [Key features](#key-features)
+- [Before you start](#before-you-start)
 - [Quick start](#quick-start)
 - [Quality dimensions](#quality-dimensions)
 - [Documentation](#documentation)
@@ -70,6 +71,22 @@ data model, see [`docs/architecture.md`](docs/architecture.md).
 | 🏷️ **State tracked via Unity Catalog tags** | No shadow bookkeeping tables — `has_check`, `has_comment`, `has_low_cardinality` live as native column tags. |
 | 🧩 **Extensible checks** | AI-generated checks and manually authored ones live side by side in `column_checks`, distinguished by tag. |
 | 📦 **Deploys as a real package** | `pip install`-able, typed, tested, and CI-checked — not a folder of loose scripts. |
+
+## Before you start
+
+LakeScore ships with working defaults, but review these before the first run — none of them
+are validated against your workspace automatically:
+
+| Setting | Where to set it | Default | Why it matters |
+|---|---|---|---|
+| **`catalog_name`** | Widget on every notebook, or the `catalog_name` variable in `databricks.yml` if deploying via DAB | `"demo"` | The Unity Catalog catalog LakeScore reads from and writes its `data_quality` schema into. Must be a real catalog you have access to — nothing else works until this is right. |
+| **Freshness/validity windows & low-cardinality threshold** | `dq_config` table, seeded per-table by `init_config.py`; override via `lakescore.catalog.dq_config.update_table_dq_conf_parameters` | `freshness_window="1d"`, `validity_window="1d"`, `low_cardinality_threshold=10` | These drive real scoring outcomes — a table written weekly will score `is_fresh = false` under the 1-day default. Tune per table before trusting the Freshness/Validity scores. |
+| **LLM model serving endpoint** | `LAKESCORE_LLM_MODEL_ENDPOINT` environment variable on the job/cluster (falls back to a hardcoded default otherwise) | `databricks-meta-llama-3-1-70b-instruct` | Must be an endpoint that actually exists in your workspace, or GenAI description/check generation will fail outright. |
+| **Vector Search endpoint & index** | `LAKESCORE_VECTOR_SEARCH_ENDPOINT` environment variable, plus the index itself | `sodacl_indexer` endpoint / `<catalog>.data_quality.knowledge_base_index` | Must be created and synced over the loaded knowledge base **before** `generate_checks.py` can run — this is manual one-time setup, not something the pipeline provisions for you. |
+| **Job cluster spec** (DAB only) | `resources/lakescore_job.yml` (`spark_version`, `node_type_id`) | Databricks Runtime 15.4.x / `Standard_DS3_v2` | Only relevant if deploying via Option A below — this hasn't been validated against a live workspace; adjust to what your workspace actually supports. |
+
+None of the above are exposed as widgets except `catalog_name` — the rest are environment
+variables or code-level defaults today.
 
 ## Quick start
 
