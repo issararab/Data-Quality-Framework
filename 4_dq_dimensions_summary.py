@@ -37,7 +37,7 @@ for catalog_name, schemas in config_data.items():
     for schema_name, tables in schemas.items():
         for table in retrieve_table_metadata(catalog_name, schema_name, list(tables.keys())):
             metrics = {
-                'has_a_valid_owner ': table['has_a_valid_owner'], 
+                'has_a_valid_owner': table['has_a_valid_owner'],
                 'is_delta_table': table['is_delta_table'],
                 'uses_a_production_pipeline': table['uses_a_production_pipeline'],
                 'has_enforced_retention_duration': table['has_enforced_retention_duration'],
@@ -63,7 +63,7 @@ for catalog_name, schemas in config_data.items():
                         columns_description = False
                         break
                 metrics = {
-                    'columns_description ': columns_description
+                    'columns_description': columns_description
                 }
                 upsert_table_dq_summary(catalog_name, schema_name, table.split('.')[-1], metrics)
                 print('{} - {} - {} - {}'.format(catalog_name, schema_name, table.split('.')[-1], metrics))
@@ -85,7 +85,7 @@ for catalog_name, schemas in config_data.items():
                 params["freshness_window"],
             )
             metrics = {
-                'is_fresh  ': freshness_data[0]['is_data_fresh']
+                'is_fresh': freshness_data[0]['is_data_fresh']
             }
             upsert_table_dq_summary(catalog_name, schema_name, table_name, metrics)
             print('{} - {} - {} - {}'.format(catalog_name, schema_name, table_name, metrics))

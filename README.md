@@ -1,14 +1,14 @@
-# 🧪 Data Quality Framework (DQF)
+# 🌊 LakeScore
 
-> A GenAI-powered data quality framework built for Databricks — compute catalog-level quality metrics, automate metadata generation, and enforce data governance at scale.
+> GenAI-powered data quality scoring for your Databricks lakehouse — compute catalog-level quality metrics, automate metadata generation, and enforce data governance at scale, all rolled up into a single score per table.
 
 ---
 
 ## Overview
 
-The **Data Quality Framework (DQF)** is a modular, extensible framework that runs natively on any Databricks workspace. It evaluates tables across a predefined taxonomy of data quality dimensions and produces a normalized score out of **100 points** per table.
+**LakeScore** is a modular, extensible framework that runs natively on any Databricks workspace. It evaluates tables across a predefined taxonomy of data quality dimensions and produces a normalized score out of **100 points** per table, surfaced on an interactive dashboard so stakeholders can see quality at a glance and drill into what's dragging a table's score down.
 
-At its core, the DQF combines:
+At its core, LakeScore combines:
 - **Rule-based quality checks** (ownership, table type, freshness, etc.)
 - **GenAI-powered metadata enrichment** (LLM-generated table/column descriptions)
 - **RAG-based check generation** (SodaCL-grounded column-level data checks via a vector store)
@@ -18,11 +18,11 @@ At its core, the DQF combines:
 ## Repository Structure
 
 ```
-data-quality-framework/
+lakescore/
 ├── data/               # Supporting data assets
 ├── generators/         # AI-powered generators (descriptions, checks)
 ├── utils/              # Shared utility functions
-├── 1_conf_init         # Notebook: Initialize DQF parameters
+├── 1_conf_init         # Notebook: Initialize LakeScore parameters
 ├── 2_metadata_update   # Notebook: Update low cardinality & generate column descriptions
 ├── 3_check_update      # Notebook: RAG-based column check generation
 ├── 4_dq_dimensions_summary  # Notebook: Compute and store all DQ dimension scores
@@ -33,7 +33,7 @@ data-quality-framework/
 
 | Notebook | Role |
 |---|---|
-| `1_conf_init` | Configure DQF parameters (thresholds, windows, custom rules) |
+| `1_conf_init` | Configure LakeScore parameters (thresholds, windows, custom rules) |
 | `2_metadata_update` | Update low cardinality flags; use GenAI to generate column descriptions |
 | `3_check_update` | Use RAG over SodaCL knowledge base to generate column-level checks |
 | `4_dq_dimensions_summary` | Gather quality results for all defined dimensions and write to `dq_summary` |
@@ -44,7 +44,7 @@ data-quality-framework/
 
 ## Data Model
 
-The DQF operates at the **catalog level**. For every catalog it monitors, it creates a dedicated `data_quality` schema containing the following tables and indexes:
+LakeScore operates at the **catalog level**. For every catalog it monitors, it creates a dedicated `data_quality` schema containing the following tables and indexes:
 
 ```
 <catalog>/
@@ -138,7 +138,7 @@ The `2_metadata_update` notebook follows a state automata logic to decide how to
 
 ## Quality Dimensions Taxonomy
 
-The DQF evaluates each table across **5 dimensions**, with sub-metrics summing to a total score of **100 points**:
+LakeScore evaluates each table across **5 dimensions**, with sub-metrics summing to a total score of **100 points**:
 
 ### 🏛 Stewardship — 25 pts
 
@@ -182,7 +182,7 @@ The DQF evaluates each table across **5 dimensions**, with sub-metrics summing t
 
 ## Scoreboard
 
-The `dq_summary` table stores the computed scores per table. An interactive **Data Quality Score Dashboard** provides a breakdown by dimension, with color-coded scoring tiers:
+The `dq_summary` table stores the computed scores per table. An interactive **LakeScore Dashboard** provides a breakdown by dimension, with color-coded scoring tiers:
 
 | Score Range | Category |
 |---|---|
@@ -205,11 +205,11 @@ Example output:
 
 1. **Clone** this repository into your Databricks workspace.
 2. Ensure `information_schema` is available in the catalogs you wish to monitor.
-3. Open and run `1_conf_init` to initialize the framework. Customize parameters per table if needed.
+3. Open and run `1_conf_init` to initialize LakeScore. Customize parameters per table if needed.
 4. Run `2_metadata_update` to enrich table and column metadata via GenAI.
 5. Run `3_check_update` to generate RAG-based column checks using the SodaCL knowledge base.
 6. Run `4_dq_dimensions_summary` to compute and persist all DQ dimension scores.
-7. Query `<catalog>.data_quality.dq_summary` or open the Score Dashboard to inspect results.
+7. Query `<catalog>.data_quality.dq_summary` or open the LakeScore Dashboard to inspect results.
 
 ---
 

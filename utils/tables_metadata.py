@@ -144,13 +144,14 @@ def _fetch_table_metadata(full_table_name: str) -> dict:
     
     return table_metadata_df
 
-def _fetch_checks_for_table(full_table_name: str) -> DataFrame:
+def _fetch_checks_for_table(catalog_name: str, full_table_name: str) -> DataFrame:
     """
     Check if a specified table has implemented data quality checks on its columns.
-    
+
     Parameters:
+    - catalog_name (str): The catalog owning the `data_quality.column_checks` table to query.
     - full_table_name (str): The full name of the table.
-    
+
     Returns:
     DataFrame: Containing columns:
         - name: The full table name
@@ -159,8 +160,8 @@ def _fetch_checks_for_table(full_table_name: str) -> DataFrame:
     """
     # Query to retrieve columns that have checks implemented
     columns_to_check_query = f"""
-    SELECT column_name 
-    FROM demo.data_quality.column_checks
+    SELECT column_name
+    FROM {catalog_name}.data_quality.column_checks
     WHERE concat(catalog_name,'.',schema_name, '.', table_name ) = '{full_table_name}'
     """
 
@@ -212,7 +213,7 @@ def retrieve_table_metadata(catalog_name: str, schema_name: str, list_of_tables:
         table_detail_df = _fetch_table_detail(full_table_name)
         table_metadata_df = _fetch_table_metadata(full_table_name)
         table_history_df = _fetch_table_history(full_table_name)
-        table_checks_metadata = _fetch_checks_for_table(full_table_name)
+        table_checks_metadata = _fetch_checks_for_table(catalog_name, full_table_name)
 
 
         # Join the DataFrames together
@@ -277,7 +278,8 @@ def retrieve_table_metadata(catalog_name: str, schema_name: str, list_of_tables:
                     "delta.deletedFileRetentionDuration" in table_properties
                 )
             else:
-                print(f"'Table Properties' is either missing or not a string in: {item}")  
+                item['has_enforced_retention_duration'] = False
+                print(f"'Table Properties' is either missing or not a string in: {item}")
         
         # Filter to keep only the selected keys
         filtered_result = [{key: item[key] for key in selected_keys} for item in result_dict]

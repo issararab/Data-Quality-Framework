@@ -637,12 +637,17 @@ def update_low_cardinality_column_tags(
     # Update tags
     for obj in low_cardinality_info:
         # update tag: has_low_cardinality
+        # Escape single quotes in the distinct values so they can't break out of the TAGS string literal
+        escaped_distinct_values = (
+            obj['distinct_values'].replace("\\", "\\\\").replace("'", "\\'")
+            if obj['is_low_cardinality'] else None
+        )
         update_tag_query = f"""
             ALTER TABLE
                 {obj['table_catalog']}.{obj['table_schema']}.{obj['table_name']}
             ALTER COLUMN
-                {obj['column_name']} {'SET' if obj['is_low_cardinality'] else 'UNSET'} 
-                TAGS ('has_low_cardinality' {"= '"+obj['distinct_values']+"'" if obj['is_low_cardinality'] else ''});
+                {obj['column_name']} {'SET' if obj['is_low_cardinality'] else 'UNSET'}
+                TAGS ('has_low_cardinality' {"= '"+escaped_distinct_values+"'" if obj['is_low_cardinality'] else ''});
             """
         spark.sql(update_tag_query)
         if obj['is_low_cardinality']:
@@ -680,12 +685,15 @@ def update_column_description(table_path: str, column_name: str, description: st
     Returns:
     - None: The function performs an ALTER operation but returns no value.
     """
-    
+    # Escape backslashes and double quotes so the (possibly LLM-generated) description
+    # can't break out of the COMMENT string literal
+    escaped_description = description.replace("\\", "\\\\").replace('"', '\\"')
+
     # SQL query to update comment
     update_comment_query = f"""
         ALTER TABLE {table_path}
         ALTER COLUMN {column_name}
-        COMMENT "{description}";
+        COMMENT "{escaped_description}";
     """
     # Execute
     spark.sql(update_comment_query)

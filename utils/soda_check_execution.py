@@ -5,15 +5,15 @@ os.environ['SODA_TELEMETRY_ENABLED'] = 'false'
 
 def generate_soda_checks_yaml(catalog_name: str, schema_name: str, list_of_tables: list) -> dict:
     """
-    Reads data from the demo.data_quality.column_checks table, filters by catalog_name,
+    Reads data from the <catalog_name>.data_quality.column_checks table, filters by catalog_name,
     and generates a list of dictionaries where each dictionary contains the full table name
     and the Soda checks YAML for that table.
-    
+
     :param catalog_name: The catalog_name to filter the data.
     :return: A list of dictionaries with 'table_name' and 'yaml_content' for each table.
     """
-    # Read data from the demo.data_quality.column_checks table
-    df = spark.table('demo.data_quality.column_checks')
+    # Read data from the <catalog_name>.data_quality.column_checks table
+    df = spark.table(f'{catalog_name}.data_quality.column_checks')
     result_list = []
     
     # Iterate through the provided list of tables
