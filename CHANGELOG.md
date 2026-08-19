@@ -40,6 +40,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Unescaped SQL string splicing when writing LLM-generated column descriptions and low-cardinality
   values into `COMMENT`/`TAGS` statements, now centralized in `lakescore.sql_utils`.
 - Fragile `os.getcwd()`-relative path resolution for the knowledge-base CSV.
+- `lakescore.generators.column_check_rag` requiring a `LAKESCORE_CATALOG_NAME` environment
+  variable that nothing set, disconnected from the `catalog_name` widget the calling notebook
+  actually uses — `notebooks/generate_checks.py` would fail on import otherwise. Now resolves
+  via `LakeScoreConfig.from_widgets`, which reads the widget the notebook already sets (falling
+  back to the same environment variable for standalone Model Serving deployment). Also removed
+  a hardcoded `llm_model_endpoint="ssbi-openai"` override that shadowed the
+  `LAKESCORE_LLM_MODEL_ENDPOINT` environment variable it was meant to respect.
 
 ## [0.1.0] - 2026-08-19
 

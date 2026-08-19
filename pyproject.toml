@@ -58,6 +58,11 @@ builtins = ["spark", "dbutils"]
 select = ["E", "F", "I", "UP", "B", "SIM"]
 ignore = ["E501"]
 
+[tool.ruff.lint.per-file-ignores]
+# Databricks notebooks are cell-based (COMMAND ---------- markers): setup code such as
+# widget declarations legitimately needs to run in a cell before a later cell's imports.
+"notebooks/*.py" = ["E402"]
+
 [tool.ruff.lint.isort]
 known-first-party = ["lakescore"]
 

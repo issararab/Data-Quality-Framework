@@ -87,6 +87,6 @@
 
   <!-- caption -->
   <text x="820" y="382" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="19" fill="#7C93A8">
-    Four Databricks notebooks, backed by the installable lakescore package — order enforced by the job DAG, not filenames.
+    Four Databricks notebooks, backed by the installable lakescore package.
   </text>
 </svg>
